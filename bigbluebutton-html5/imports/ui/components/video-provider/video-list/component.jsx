@@ -58,9 +58,14 @@ class VideoList extends Component {
       getStats,
       stopGettingStats,
       enableVideoStats,
+<<<<<<< Updated upstream
       cursor,
       swapLayout,
       mediaHeight,
+=======
+      // cursor,
+      // swapLayout,
+>>>>>>> Stashed changes
     } = this.props;
     const { focusedId } = this.state;
 
@@ -85,9 +90,9 @@ class VideoList extends Component {
             [styles.videoListItemSwapLayout]: swapLayout,
             [styles.focused]: focusedId === user.id && users.length > 2,
           })}
-          style={{
-            cursor,
-          }}
+          // style={{
+          //   cursor,
+          // }}
         >
           <VideoListItem
             numOfUsers={users.length}
@@ -97,8 +102,12 @@ class VideoList extends Component {
             getStats={(videoRef, callback) => getStats(user.id, videoRef, callback)}
             stopGettingStats={() => stopGettingStats(user.id)}
             enableVideoStats={enableVideoStats}
+<<<<<<< Updated upstream
             swapLayout={swapLayout}
             mediaHeight={mediaHeight}
+=======
+            // swapLayout={swapLayout}
+>>>>>>> Stashed changes
           />
         </div>
       );

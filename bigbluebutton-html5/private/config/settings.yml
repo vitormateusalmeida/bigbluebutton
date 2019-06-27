@@ -83,7 +83,7 @@ public:
       - danger
       - warning
   kurento:
-    wsUrl: HOST
+    wsUrl: wss://bbb22.bbbvm.imdt.com.br/bbb-webrtc-sfu
     chromeDefaultExtensionKey: akgoaoikmbmhcopjgakkcepdgdgkjfbc
     chromeDefaultExtensionLink: https://chrome.google.com/webstore/detail/bigbluebutton-screenshare/akgoaoikmbmhcopjgakkcepdgdgkjfbc
     chromeExtensionKey: KEY

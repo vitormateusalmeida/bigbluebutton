@@ -162,8 +162,8 @@ class VideoProvider extends Component {
   }
 
   componentDidMount() {
-    const { onMount } = this.props;
-    onMount();
+    // const { onMount } = this.props;
+    // onMount();
 
     this.checkIceConnectivity();
     document.addEventListener('joinVideo', this.shareWebcam); // TODO find a better way to do this
@@ -1012,14 +1012,14 @@ class VideoProvider extends Component {
     const {
       users,
       enableVideoStats,
-      cursor,
+      // cursor,
       swapLayout,
       mediaHeight,
     } = this.props;
     return (
       <VideoList
-        cursor={cursor}
-        swapLayout={swapLayout}
+        // cursor={cursor}
+        // swapLayout={swapLayout}
         mediaHeight={mediaHeight}
         users={users}
         onMount={this.createVideoTag}
