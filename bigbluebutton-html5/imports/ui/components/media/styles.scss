@@ -22,7 +22,7 @@
   order: 2;
 }
 
-.overlay {
+%overlay {
   display: flex;
   border: 0;
   margin-top: 10px;
@@ -32,21 +32,22 @@
   max-height: var(--video-height);
   min-height: var(--video-height);
   overflow: hidden;
-}
-
-.overlayRelative{
   position: relative;
   width: 100%;
 }
 
-.overlayAbsoluteSingle{
-  width: fit-content;
+.overlay {
+  @extend %overlay;
 }
 
-.overlayAbsoluteMult{
-  width: 100%;
-  max-width: 100%;
-}
+//.overlayAbsoluteSingle{
+//  width: fit-content;
+//}
+
+//.overlayAbsolute{
+//  width: 100%;
+//  max-width: 100%;
+//}
 
 .overlayToTop {
   order: 3;
@@ -61,11 +62,15 @@
   position: absolute;
   overflow: hidden;
   clip: rect(0 0 0 0);
-  height: 1px; width: 1px;
-  margin: -1px; padding: 0; border: 0;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
 }
 
 .floatingOverlay {
+  @extend %overlay;
   margin-top: 10px;
   margin-bottom: 10px;
 
@@ -104,6 +109,7 @@
 
 .dropZoneTop,
 .dropZoneBottom {
+  display: none;
   border: 1px dashed var(--color-gray-light);
   position: absolute;
   width: 100%;
@@ -118,9 +124,18 @@
   bottom: 0;
 }
 
-.dropZoneBg {
+.dropZoneBgTop,
+.dropZoneBgBottom {
   position: absolute;
   z-index: 99;
   width: 100%;
   background-color: rgba(255, 255, 255, .3);
+}
+
+.dropZoneBgTop {
+  top: 0;
+}
+
+.dropZoneBgBottom {
+  bottom: 0;
 }
