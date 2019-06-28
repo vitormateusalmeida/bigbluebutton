@@ -20,8 +20,7 @@ import Auth from '/imports/ui/services/auth';
 import VideoService from './service';
 import VideoList from './video-list/component';
 
-const APP_CONFIG = Meteor.settings.public.app;
-const ENABLE_NETWORK_INFORMATION = APP_CONFIG.enableNetworkInformation;
+const ENABLE_NETWORK_MONITORING = Meteor.settings.public.networkMonitoring.enableNetworkMonitoring;
 const CAMERA_PROFILES = Meteor.settings.public.kurento.cameraProfiles;
 
 const intlClientErrors = defineMessages({
@@ -174,7 +173,7 @@ class VideoProvider extends Component {
     this.visibility.onVisible(this.unpauseViewers);
     this.visibility.onHidden(this.pauseViewers);
 
-    if (ENABLE_NETWORK_INFORMATION) {
+    if (ENABLE_NETWORK_MONITORING) {
       this.currentWebcamsStatsInterval = setInterval(() => {
         const currentWebcams = getCurrentWebcams();
         if (!currentWebcams) return;
@@ -491,7 +490,7 @@ class VideoProvider extends Component {
         webRtcPeer.dispose();
       }
       delete this.webRtcPeers[id];
-      if (ENABLE_NETWORK_INFORMATION) {
+      if (ENABLE_NETWORK_MONITORING) {
         deleteWebcamConnection(id);
         updateCurrentWebcamsConnection(this.webRtcPeers);
       }
@@ -520,7 +519,7 @@ class VideoProvider extends Component {
       const cameraProfile = CAMERA_PROFILES.find(profile => profile.id === profileId)
         || CAMERA_PROFILES.find(profile => profile.default)
         || CAMERA_PROFILES[0];
-      const { constraints } = cameraProfile;
+      const { constraints, bitrate } = cameraProfile;
       if (Session.get('WebcamDeviceId')) {
         constraints.deviceId = { exact: Session.get('WebcamDeviceId') };
       }
@@ -574,6 +573,7 @@ class VideoProvider extends Component {
             cameraId: id,
             meetingId,
             voiceBridge,
+            bitrate,
           };
           this.sendMessage(message);
           return true;
@@ -585,7 +585,7 @@ class VideoProvider extends Component {
           .peerConnection
           .oniceconnectionstatechange = this._getOnIceConnectionStateChangeCallback(id);
       }
-      if (ENABLE_NETWORK_INFORMATION) {
+      if (ENABLE_NETWORK_MONITORING) {
         newWebcamConnection(id);
         updateCurrentWebcamsConnection(this.webRtcPeers);
       }
@@ -656,12 +656,17 @@ class VideoProvider extends Component {
     const peer = this.webRtcPeers[id];
 
     return (candidate) => {
-      // Setup a timeout only when ice first is generated
-      if (!this.restartTimeout[id]) {
+      // Setup a timeout only when ice first is generated and if the peer wasn't
+      // marked as started already (which is done on handlePlayStart after
+      // it was verified that media could circle through the server)
+      const peerHasStarted = peer && peer.started === true;
+      const shouldSetReconnectionTimeout = !this.restartTimeout[id] && !peerHasStarted;
+
+      if (shouldSetReconnectionTimeout) {
         this.restartTimer[id] = this.restartTimer[id] || CAMERA_SHARE_FAILED_WAIT_TIME;
 
         this.logger('debug', `Setting a camera connection restart in ${this.restartTimer[id]}`, 'video_provider_cam_restart', { cameraId: id });
-        this.restartTimeout[id] = setTimeout(this._getWebRTCStartTimeout(id, shareWebcam, peer),
+        this.restartTimeout[id] = setTimeout(this._getWebRTCStartTimeout(id, shareWebcam),
           this.restartTimer[id]);
       }
 
@@ -950,12 +955,12 @@ class VideoProvider extends Component {
       const { userId } = this.props;
       this.logger('info', 'Handle play start for camera', 'video_provider_handle_play_start', { cameraId: id });
 
+      peer.started = true;
+
       // Clear camera shared timeout when camera succesfully starts
       clearTimeout(this.restartTimeout[id]);
       delete this.restartTimeout[id];
       delete this.restartTimer[id];
-
-      peer.started = true;
 
       if (!peer.attached) {
         this.attachVideoStream(id);

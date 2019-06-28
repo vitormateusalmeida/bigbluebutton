@@ -101,6 +101,10 @@ const intlMessages = defineMessages({
     id: 'app.createBreakoutRoom.roomTime',
     description: 'used to provide current room time for aria label',
   },
+  numberOfRoomsIsValid: {
+    id: 'app.createBreakoutRoom.numberOfRoomsError',
+    description: 'Label an error message',
+  },
 });
 
 const MIN_BREAKOUT_ROOMS = 2;
@@ -148,6 +152,7 @@ class BreakoutRoom extends Component {
     this.setRecord = this.setRecord.bind(this);
     this.blurDurationTime = this.blurDurationTime.bind(this);
     this.removeRoomUsers = this.removeRoomUsers.bind(this);
+    this.renderErrorMessages = this.renderErrorMessages.bind(this);
 
     this.state = {
       numberOfRooms: MIN_BREAKOUT_ROOMS,
@@ -160,6 +165,7 @@ class BreakoutRoom extends Component {
       preventClosing: true,
       valid: true,
       record: false,
+      numberOfRoomsIsValid: true,
     };
 
     this.breakoutFormId = _.uniqueId('breakout-form-');
@@ -203,12 +209,18 @@ class BreakoutRoom extends Component {
       users,
       freeJoin,
       record,
+      numberOfRoomsIsValid,
     } = this.state;
 
     if (users.length === this.getUserByRoom(0).length && !freeJoin) {
       this.setState({ valid: false });
       return;
     }
+
+    if (!numberOfRoomsIsValid) {
+      return;
+    }
+
     this.setState({ preventClosing: false });
     const { numberOfRooms, durationTime } = this.state;
     const rooms = _.range(1, numberOfRooms + 1).map(value => ({
@@ -245,12 +257,22 @@ class BreakoutRoom extends Component {
 
   onAssignRandomly() {
     const { numberOfRooms } = this.state;
-    return this.getUserByRoom(0)
-      .filter(user => !user.isModerator)
-      .forEach(user => this.changeUserRoom(
-        user.userId,
-        Math.floor(Math.random() * (numberOfRooms) + 1),
-      ));
+    const { users } = this.state;
+    // We only want to assign viewers so filter out the moderators. We also want to get
+    // all users each run so that clicking the button again will reshuffle
+    const viewers = users.filter(user => !user.isModerator);
+    // We want to keep assigning users until all viewers have been assigned a room
+    while (viewers.length > 0) {
+      // We cycle through the rooms picking one user for each room so that the rooms
+      // will have an equal number of people in each one
+      for (let i = 1; i <= numberOfRooms && viewers.length > 0; i++) {
+        // Select a random user for the room
+        const userIdx = Math.floor(Math.random() * (viewers.length));
+        this.changeUserRoom(viewers[userIdx].userId, i);
+        // Remove the picked user so they aren't selected again
+        viewers.splice(userIdx, 1);
+      }
+    }
   }
 
 
@@ -330,7 +352,10 @@ class BreakoutRoom extends Component {
 
     const idxUser = users.findIndex(user => user.userId === userId);
     users[idxUser].room = room;
-    this.setState({ users });
+    this.setState({
+      users,
+      valid: this.getUserByRoom(0).length !== users.length,
+    });
   }
 
   increaseDurationTime() {
@@ -354,7 +379,12 @@ class BreakoutRoom extends Component {
   }
 
   changeNumberOfRooms(event) {
-    this.setState({ numberOfRooms: Number.parseInt(event.target.value, 10) });
+    const numberOfRooms = Number.parseInt(event.target.value, 10);
+    this.setState({
+      numberOfRooms,
+      numberOfRoomsIsValid: numberOfRooms <= MAX_BREAKOUT_ROOMS
+      && numberOfRooms >= MIN_BREAKOUT_ROOMS,
+    });
   }
 
   renderRoomsGrid() {
@@ -363,6 +393,9 @@ class BreakoutRoom extends Component {
       valid,
       numberOfRooms,
     } = this.state;
+    const rooms = (numberOfRooms > MAX_BREAKOUT_ROOMS
+      || numberOfRooms < MIN_BREAKOUT_ROOMS)
+      ? 0 : numberOfRooms;
     const allowDrop = (ev) => {
       ev.preventDefault();
     };
@@ -388,7 +421,7 @@ class BreakoutRoom extends Component {
           </span>
         </div>
         {
-          _.range(1, numberOfRooms + 1).map(value => (
+          _.range(1, rooms + 1).map(value => (
             <div key={`room-${value}`}>
               <p className={styles.freeJoinLabel}>
                 {intl.formatMessage(intlMessages.roomLabel, { 0: (value) })}
@@ -411,88 +444,102 @@ class BreakoutRoom extends Component {
     const {
       numberOfRooms,
       durationTime,
+      numberOfRoomsIsValid,
     } = this.state;
     if (isInvitation) return null;
 
     return (
-      <div className={styles.breakoutSettings} key={this.breakoutFormId}>
-        <div>
-          <p className={styles.labelText} aria-hidden>
-            {intl.formatMessage(intlMessages.numberOfRooms)}
-          </p>
-          <select
-            id="numberOfRooms"
-            name="numberOfRooms"
-            className={styles.inputRooms}
-            value={numberOfRooms}
-            onChange={this.changeNumberOfRooms}
-            aria-label={intl.formatMessage(intlMessages.numberOfRooms)}
-          >
-            {
-              _.range(MIN_BREAKOUT_ROOMS, MAX_BREAKOUT_ROOMS + 1).map(item => (<option key={_.uniqueId('value-')}>{item}</option>))
-            }
-          </select>
-        </div>
-        <label htmlFor="breakoutRoomTime">
-          <p className={styles.labelText} aria-hidden>
-            {intl.formatMessage(intlMessages.duration)}
-          </p>
-          <div className={styles.durationArea}>
-            <input
-              type="number"
-              className={styles.duration}
-              min="1"
-              value={durationTime}
-              onChange={this.changeDurationTime}
-              onBlur={this.blurDurationTime}
-              aria-label={intl.formatMessage(intlMessages.duration)}
-            />
-            <HoldButton
-              key="decrease-breakout-time"
-              exec={this.decreaseDurationTime}
-              minBound={MIN_BREAKOUT_ROOMS}
-              value={durationTime}
-              className={styles.btnStyle}
+      <React.Fragment>
+        <div className={styles.breakoutSettings} key={this.breakoutFormId}>
+          <div>
+            <p
+              className={cx(styles.labelText, !numberOfRoomsIsValid
+                && styles.withError)}
+              aria-hidden
             >
-              <Button
-                label={intl.formatMessage(intlMessages.minusRoomTime)}
-                aria-label={
-                  `${intl.formatMessage(intlMessages.minusRoomTime)} ${intl.formatMessage(intlMessages.roomTime, { 0: durationTime - 1 })}`
-                }
-                icon="substract"
-                onClick={() => {}}
-                hideLabel
-                circle
-                size="sm"
-              />
-            </HoldButton>
-            <HoldButton
-              key="increase-breakout-time"
-              exec={this.increaseDurationTime}
-              className={styles.btnStyle}
+              {intl.formatMessage(intlMessages.numberOfRooms)}
+            </p>
+            <select
+              id="numberOfRooms"
+              name="numberOfRooms"
+              className={cx(styles.inputRooms, !numberOfRoomsIsValid
+                && styles.errorBorder)}
+              value={numberOfRooms}
+              onChange={this.changeNumberOfRooms}
+              aria-label={intl.formatMessage(intlMessages.numberOfRooms)}
             >
-              <Button
-                label={intl.formatMessage(intlMessages.addRoomTime)}
-                aria-label={
-                  `${intl.formatMessage(intlMessages.addRoomTime)} ${intl.formatMessage(intlMessages.roomTime, { 0: durationTime + 1 })}`
-                }
-                icon="add"
-                onClick={() => {}}
-                hideLabel
-                circle
-                size="sm"
-              />
-            </HoldButton>
+              {
+                _.range(MIN_BREAKOUT_ROOMS, MAX_BREAKOUT_ROOMS + 1).map(item => (<option key={_.uniqueId('value-')}>{item}</option>))
+              }
+            </select>
           </div>
-        </label>
-        <Button
-          label={intl.formatMessage(intlMessages.randomlyAssign)}
-          className={styles.randomlyAssignBtn}
-          onClick={this.onAssignRandomly}
-          size="sm"
-          color="default"
-        />
-      </div>
+          <label htmlFor="breakoutRoomTime">
+            <p className={styles.labelText} aria-hidden>
+              {intl.formatMessage(intlMessages.duration)}
+            </p>
+            <div className={styles.durationArea}>
+              <input
+                type="number"
+                className={styles.duration}
+                min="1"
+                value={durationTime}
+                onChange={this.changeDurationTime}
+                onBlur={this.blurDurationTime}
+                aria-label={intl.formatMessage(intlMessages.duration)}
+              />
+              <HoldButton
+                key="decrease-breakout-time"
+                exec={this.decreaseDurationTime}
+                minBound={MIN_BREAKOUT_ROOMS}
+                value={durationTime}
+                className={styles.btnStyle}
+              >
+                <Button
+                  label={intl.formatMessage(intlMessages.minusRoomTime)}
+                  aria-label={
+                    `${intl.formatMessage(intlMessages.minusRoomTime)} ${intl.formatMessage(intlMessages.roomTime, { 0: durationTime - 1 })}`
+                  }
+                  icon="substract"
+                  onClick={() => {}}
+                  hideLabel
+                  circle
+                  size="sm"
+                />
+              </HoldButton>
+              <HoldButton
+                key="increase-breakout-time"
+                exec={this.increaseDurationTime}
+                className={styles.btnStyle}
+              >
+                <Button
+                  label={intl.formatMessage(intlMessages.addRoomTime)}
+                  aria-label={
+                    `${intl.formatMessage(intlMessages.addRoomTime)} ${intl.formatMessage(intlMessages.roomTime, { 0: durationTime + 1 })}`
+                  }
+                  icon="add"
+                  onClick={() => {}}
+                  hideLabel
+                  circle
+                  size="sm"
+                />
+              </HoldButton>
+            </div>
+          </label>
+          <Button
+            label={intl.formatMessage(intlMessages.randomlyAssign)}
+            className={styles.randomlyAssignBtn}
+            onClick={this.onAssignRandomly}
+            size="sm"
+            color="default"
+            disabled={!numberOfRoomsIsValid}
+          />
+        </div>
+        <span className={!numberOfRoomsIsValid
+          ? styles.withError : styles.dontShow}
+        >
+          {intl.formatMessage(intlMessages.numberOfRoomsIsValid)}
+        </span>
+      </React.Fragment>
     );
   }
 
@@ -620,6 +667,30 @@ class BreakoutRoom extends Component {
     );
   }
 
+  renderErrorMessages() {
+    const {
+      intl,
+    } = this.props;
+    const {
+      valid,
+      numberOfRoomsIsValid,
+    } = this.state;
+    return (
+      <React.Fragment>
+        {!valid
+          && (
+          <span className={styles.withError}>
+            {intl.formatMessage(intlMessages.leastOneWarnBreakout)}
+          </span>)}
+        {!numberOfRoomsIsValid
+          && (
+          <span className={styles.withError}>
+            {intl.formatMessage(intlMessages.numberOfRoomsIsValid)}
+          </span>)}
+      </React.Fragment>
+    );
+  }
+
   renderDesktop() {
     return [
       this.renderBreakoutForm(),
@@ -632,14 +703,21 @@ class BreakoutRoom extends Component {
     const { intl } = this.props;
     const { formFillLevel } = this.state;
     if (formFillLevel === 2) {
-      return this.renderRoomSortList();
+      return [
+        this.renderErrorMessages(),
+        this.renderRoomSortList(),
+      ];
     }
 
     if (formFillLevel === 3) {
-      return this.renderSelectUserScreen();
+      return [
+        this.renderErrorMessages(),
+        this.renderSelectUserScreen(),
+      ];
     }
 
     return [
+      this.renderErrorMessages(),
       this.renderBreakoutForm(),
       this.renderCheckboxes(),
       this.renderButtonSetLevel(2, intl.formatMessage(intlMessages.nextLabel)),
@@ -669,7 +747,11 @@ class BreakoutRoom extends Component {
 
   render() {
     const { intl, isInvitation } = this.props;
-    const { preventClosing } = this.state;
+    const {
+      preventClosing,
+      valid,
+      numberOfRoomsIsValid,
+    } = this.state;
 
     const BROWSER_RESULTS = browser();
     const isMobileBrowser = BROWSER_RESULTS.mobile || BROWSER_RESULTS.os.includes('Android');
@@ -687,6 +769,7 @@ class BreakoutRoom extends Component {
               ? intl.formatMessage(intlMessages.invitationConfirm)
               : intl.formatMessage(intlMessages.confirmButton),
             callback: isInvitation ? this.onInviteBreakout : this.onCreateBreakouts,
+            disabled: !valid || !numberOfRoomsIsValid,
           }
         }
         dismiss={{
