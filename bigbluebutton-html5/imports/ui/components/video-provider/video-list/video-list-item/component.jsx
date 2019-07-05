@@ -16,6 +16,7 @@ import logger from '/imports/startup/client/logger';
 import VideoListItemStats from './video-list-item-stats/component';
 import FullscreenButtonContainer from '../../fullscreen-button/container';
 import { styles } from '../styles';
+import { withConsumer } from '../../../media/webcam-draggable-overlay/context';
 
 const intlMessages = defineMessages({
   connectionStatsLabel: {
@@ -40,7 +41,15 @@ class VideoListItem extends Component {
   }
 
   componentDidMount() {
-    const { onMount } = this.props;
+    const { onMount, reduceDispatch } = this.props;
+
+    reduceDispatch(
+      {
+        type: 'setVideoRef',
+        value: this.videoTag,
+      },
+    );
+
     onMount(this.videoTag);
 
     this.videoTag.addEventListener('loadeddata', () => this.setVideoIsReady());
@@ -198,7 +207,7 @@ class VideoListItem extends Component {
   }
 }
 
-export default injectIntl(VideoListItem);
+export default injectIntl(withConsumer(VideoListItem));
 
 VideoListItem.defaultProps = {
   numOfUsers: 0,

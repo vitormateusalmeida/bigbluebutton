@@ -82,7 +82,8 @@ export default class Media extends Component {
         <WebcamDraggable
           refMediaContainer={this.refContainer}
           swapLayout={swapLayout}
-          floatingOverlay={floatingOverlay}
+          shouldFloating={floatingOverlay}
+          usersVideoLenght={usersVideo.length}
           hideOverlay={hideOverlay}
           disableVideo={disableVideo}
           audioModalIsOpen={audioModalIsOpen}

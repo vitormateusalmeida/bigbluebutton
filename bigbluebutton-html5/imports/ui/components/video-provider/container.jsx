@@ -20,5 +20,5 @@ export default withTracker(props => ({
   userName: VideoService.userName(),
   enableVideoStats: getFromUserSettings('enableVideoStats', Meteor.settings.public.kurento.enableVideoStats),
   voiceBridge: VideoService.voiceBridge(),
-  onMount: props.onMount,
+  // onMount: props.onMount,
 }))(VideoProviderContainer);

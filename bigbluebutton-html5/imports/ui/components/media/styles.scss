@@ -25,15 +25,12 @@
 %overlay {
   display: flex;
   border: 0;
-  margin-top: 10px;
-  margin-bottom: 10px;
   z-index: 2;
   align-items: center;
   max-height: var(--video-height);
   min-height: var(--video-height);
   overflow: hidden;
   position: relative;
-  width: 100%;
 }
 
 .overlay {
@@ -71,20 +68,27 @@
 
 .floatingOverlay {
   @extend %overlay;
-  margin-top: 10px;
-  margin-bottom: 10px;
+  top: 0;
+  left: 0;
 
   @include mq($medium-up) {
     z-index: 999;
     position: absolute;
-    bottom: 0;
-    right: 0;
-    width: fit-content;
     min-width: calc(var(--video-height) * var(--video-ratio));
-    max-width: fit-content;
-    height: fit-content;
     min-height: var(--video-height);
   }
+}
+
+.fit{
+  width: fit-content;
+  height: fit-content;
+  max-width: fit-content;
+}
+
+.full{
+  min-width: 100%;
+  width: 100%;
+  max-width: 100%;
 }
 
 .hide {
@@ -95,47 +99,36 @@
   display: block;
 }
 
-.top {
-  top: 0;
-}
-
-.bottom {
-  bottom: 0;
-}
-
 .dragging {
   opacity: .5;
 }
 
 .dropZoneTop,
 .dropZoneBottom {
-  display: none;
   border: 1px dashed var(--color-gray-light);
   position: absolute;
   width: 100%;
   z-index: 9999;
 }
 
-.dropZoneTop {
-  top: 0;
-}
-
-.dropZoneBottom {
-  bottom: 0;
-}
-
 .dropZoneBgTop,
 .dropZoneBgBottom {
-  position: absolute;
   z-index: 99;
   width: 100%;
-  background-color: rgba(255, 255, 255, .3);
+  height: 100%;
 }
 
-.dropZoneBgTop {
+.dropZoneTop,
+.dropZoneBgTop{
   top: 0;
 }
 
-.dropZoneBgBottom {
+.dropZoneBottom,
+.dropZoneBgBottom{
   bottom: 0;
+}
+
+.dropZoneTop:hover .dropZoneBgTop,
+.dropZoneBottom:hover .dropZoneBgBottom{
+  background-color: rgba(255, 255, 255, .3);
 }
