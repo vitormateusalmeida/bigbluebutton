@@ -78,8 +78,8 @@ class VideoList extends Component {
   }
 
   componentDidMount() {
-    const { reduceDispatch } = this.props;
-    reduceDispatch(
+    const { webcamDraggableDispatch } = this.props;
+    webcamDraggableDispatch(
       {
         type: 'setVideoListRef',
         value: this.grid,
@@ -102,6 +102,7 @@ class VideoList extends Component {
     }
     const { focusedId } = this.state;
     const { width: canvasWidth, height: canvasHeight } = this.canvas.getBoundingClientRect();
+
     const gridGutter = parseInt(window.getComputedStyle(this.grid)
       .getPropertyValue('grid-row-gap'), 10);
     const hasFocusedItem = numItems > 2 && focusedId;

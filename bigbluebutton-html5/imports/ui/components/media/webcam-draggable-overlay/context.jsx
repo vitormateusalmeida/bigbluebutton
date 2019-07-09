@@ -24,6 +24,7 @@ const initialState = {
   dragging: false,
   videoRef: null,
   videoListRef: null,
+  isFullscreen: false,
 };
 
 const reducer = (state, action) => {
@@ -57,32 +58,47 @@ const reducer = (state, action) => {
     }
     case 'setWebcamRef': {
       return {
-        ...state, webcamRef: action.value,
+        ...state,
+        webcamRef: action.value,
       };
     }
     case 'setInitialRef': {
       return {
-        ...state, initialRef: { x: action.value.x, y: action.value.y },
+        ...state,
+        initialRef: {
+          x: action.value.x,
+          y: action.value.y,
+        },
       };
     }
     case 'setTempPosition': {
       return {
-        ...state, tempPosition: { x: action.value.x, y: action.value.y },
+        ...state,
+        tempPosition: {
+          x: action.value.x,
+          y: action.value.y,
+        },
       };
     }
     case 'setLastPosition': {
       return {
-        ...state, lastPosition: { x: action.value.x, y: action.value.y },
+        ...state,
+        lastPosition: {
+          x: action.value.x,
+          y: action.value.y,
+        },
       };
     }
     case 'setVideoRef': {
       return {
-        ...state, videoRef: action.value,
+        ...state,
+        videoRef: action.value,
       };
     }
     case 'setVideoListRef': {
       return {
-        ...state, videoListRef: action.value,
+        ...state,
+        videoListRef: action.value,
       };
     }
     case 'dragStart': {
@@ -95,6 +111,18 @@ const reducer = (state, action) => {
       return {
         ...state,
         dragging: false,
+      };
+    }
+    case 'onFullscreen': {
+      return {
+        ...state,
+        isFullscreen: true,
+      };
+    }
+    case 'offFullscreen': {
+      return {
+        ...state,
+        isFullscreen: false,
       };
     }
     default: {
@@ -110,18 +138,21 @@ const ContextConsumer = Component => props => (
 );
 
 const ContextProvider = (props) => {
-  const [reduceState, reduceDispatch] = useReducer(reducer, initialState);
-  const { placement, lastPosition } = reduceState;
+  const [webcamDraggableState, webcamDraggableDispatch] = useReducer(reducer, initialState);
+  const { placement, lastPosition } = webcamDraggableState;
   const { children } = props;
   useEffect(() => {
     Storage.setItem('webcamPlacement', placement);
     Storage.setItem('webcamLastPosition', lastPosition);
-  }, [placement, lastPosition]);
+  }, [
+    placement,
+    lastPosition,
+  ]);
 
   return (
     <WebcamDraggableContext.Provider value={{
-      reduceState,
-      reduceDispatch,
+      webcamDraggableState,
+      webcamDraggableDispatch,
       ...props,
     }}
     >

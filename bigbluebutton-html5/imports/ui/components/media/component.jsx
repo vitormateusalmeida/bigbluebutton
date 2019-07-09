@@ -70,6 +70,9 @@ export default class Media extends Component {
         id="container"
         className={cx(styles.container)}
         ref={this.refContainer}
+        style={{
+          overflow: 'hidden',
+        }}
       >
         <div
           className={!swapLayout ? contentClassName : overlayClassName}
@@ -82,7 +85,7 @@ export default class Media extends Component {
         <WebcamDraggable
           refMediaContainer={this.refContainer}
           swapLayout={swapLayout}
-          shouldFloating={floatingOverlay}
+          singleWebcam={floatingOverlay}
           usersVideoLenght={usersVideo.length}
           hideOverlay={hideOverlay}
           disableVideo={disableVideo}

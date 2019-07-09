@@ -41,9 +41,9 @@ class VideoListItem extends Component {
   }
 
   componentDidMount() {
-    const { onMount, reduceDispatch } = this.props;
+    const { onMount, webcamDraggableDispatch } = this.props;
 
-    reduceDispatch(
+    webcamDraggableDispatch(
       {
         type: 'setVideoRef',
         value: this.videoTag,
@@ -139,7 +139,9 @@ class VideoListItem extends Component {
   render() {
     const { showStats, stats, videoIsReady } = this.state;
     const {
-      user, numOfUsers,
+      user,
+      numOfUsers,
+      webcamDraggableState,
     } = this.props;
     const availableActions = this.getAvailableActions();
     const enableVideoMenu = Meteor.settings.public.kurento.enableVideoMenu || false;
@@ -158,6 +160,8 @@ class VideoListItem extends Component {
           muted
           className={cx({
             [styles.media]: true,
+            [styles.cursorGrab]: !webcamDraggableState.dragging,
+            [styles.cursorGrabbing]: webcamDraggableState.dragging,
           })}
           ref={(ref) => { this.videoTag = ref; }}
           autoPlay
